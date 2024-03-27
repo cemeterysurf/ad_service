@@ -1,0 +1,32 @@
+version: '3'
+services:
+    python:
+        restart: unless-stopped
+        build: .
+        command: sh -c "cd /opt && alembic upgrade head && uvicorn src.app:app --host 0.0.0.0 --port 7200"
+        ports:
+            - "7200:7200"
+        env_file: .env
+        links:
+            - db
+        depends_on:
+            - db
+            - redis
+
+    db:
+        image: postgres:16.2-alpine
+        env_file:
+            - ./.env
+        environment:
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_DB=${DB_NAME}
+        ports:
+            - "5432:5432"
+
+    redis:
+      image: redis:rc-alpine3.12
+      container_name: ad_service_redis_db
+      restart: on-failure
+      ports:
+        - 6379:6379
